@@ -1,0 +1,29 @@
+# Secrets and local env
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Workshop runtime: student/agent output (keep dirs via .gitkeep if needed)
+agent_workspace/*
+!agent_workspace/.gitkeep
+logs/*
+!logs/.gitkeep

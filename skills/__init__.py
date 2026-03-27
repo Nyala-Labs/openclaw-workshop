@@ -1,0 +1,1 @@
+"""OpenClaw workshop skills package."""

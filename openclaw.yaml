@@ -1,0 +1,36 @@
+# OpenClaw baseline configuration — bridges LLM API, Telegram, and registered skills.
+# Paths below are container paths (see docker-compose.yml volume mounts).
+
+version: "1"
+
+agent:
+  name: workshop-agent
+  # Loaded by the runtime; keep prompts out of Python strings when possible
+  system_prompt_file: /app/prompts/core_directive.md
+
+llm:
+  provider: "${LLM_PROVIDER:-openai_compatible}"
+  api_key_env: LLM_API_KEY
+  base_url: "${LLM_BASE_URL:-}"
+  model: "${LLM_MODEL:-gpt-4o-mini}"
+
+telegram:
+  enabled: true
+  bot_token_env: TELEGRAM_BOT_TOKEN
+  # Single chat for workshop simplicity; production uses allowlists / RBAC
+  default_chat_id_env: TELEGRAM_CHAT_ID
+
+security:
+  require_exec_approval_env: REQUIRE_EXEC_APPROVAL
+  workspace_root_env: OPENCLAW_WORKSPACE_ROOT
+
+skills:
+  module_paths:
+    - /app/skills
+  # Skills register themselves; this list is documentation / optional preload
+  preload:
+    - local_file_io
+
+logging:
+  level: "${LOG_LEVEL:-INFO}"
+  audit_dir: /var/log/openclaw

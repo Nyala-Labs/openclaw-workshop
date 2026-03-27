@@ -1,0 +1,33 @@
+# OpenClaw workshop stack: agent runs inside the container; host paths are mounted read/write
+# only where needed. Execution jail is ./agent_workspace — skills must enforce the same boundary.
+services:
+  openclaw-agent:
+    image: python:3.12-slim-bookworm
+    container_name: openclaw-workshop-agent
+    working_dir: /app
+    env_file:
+      - .env
+    environment:
+      # Explicit jail path inside container (skills resolve against this)
+      OPENCLAW_WORKSPACE_ROOT: /workspace
+      OPENCLAW_SKILLS_DIR: /app/skills
+      OPENCLAW_PROMPTS_DIR: /app/prompts
+      OPENCLAW_LOGS_DIR: /var/log/openclaw
+    volumes:
+      # Execution sandbox — agent file I/O is restricted here by skills + policy
+      - ./agent_workspace:/workspace:rw
+      # Skill code (read-only in production; rw for local iteration)
+      - ./skills:/app/skills:rw
+      # Prompts / directives
+      - ./prompts:/app/prompts:ro
+      # Audit trail (host-backed)
+      - ./logs:/var/log/openclaw:rw
+      # Optional: mount repo root for workshop exercises
+      - ./openclaw.yaml:/app/openclaw.yaml:ro
+    # Workshop default: keep container up; replace with your real agent entrypoint
+    command: ["sleep", "infinity"]
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
