@@ -44,12 +44,24 @@ Volumes mapped into the container:
 
 ## 3. Telegram bot (optional)
 
-1. Open Telegram, search for **@BotFather**, send `/newbot` (or use an existing bot).
+1. Open Telegram, search for **@BotFather**, send `/newbot` (or use an existing bot). Follow the instructions to create your own bot.
 2. Copy the **HTTP API token** into `TELEGRAM_BOT_TOKEN` in `.env`.
 3. Start a chat with your bot and send `/start`.
-4. Obtain your **chat ID** (your facilitator may use a small helper script or `@userinfobot`). Put it in `TELEGRAM_CHAT_ID`.
 
-The workshop facilitator will connect this to the OpenClaw runtime per `openclaw.yaml`.
+must send some message.
+<img src="public/CreatedBotConvo.png" alt="Screenshot of talking to your bot" />
+
+4. Obtain your **chat ID**.
+
+make api call to telegram's servers.
+replace YOUR_BOT_TOKEN with your bot token, no spaces or other characters
+go to <a href=https://api.telegram.org/botYOUR_BOT_TOKEN/getUpdates></a>
+<img src="public/TelegramChatID.png" alt="Photo of Telegram Chat ID location">
+
+
+5. Put it in `TELEGRAM_CHAT_ID`.
+
+this telegram bot will connected to openclaw.yaml.
 
 ## 4. Where to look next
 
