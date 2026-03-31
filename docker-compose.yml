@@ -18,7 +18,7 @@ services:
       - ./agent_workspace:/workspace:rw
       # Skill code (read-only in production; rw for local iteration)
       - ./skills:/app/skills:rw
-      # Prompts / directives
+      # Prompts
       - ./prompts:/app/prompts:ro
       # Audit trail (host-backed)
       - ./logs:/var/log/openclaw:rw

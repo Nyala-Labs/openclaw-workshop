@@ -25,9 +25,23 @@
 
 - Prerequisites check: Docker / Docker Compose, editor, Telegram optional for later.
 - Copy `.env.example` → `.env`; paste **LLM** key only if running model calls in-session (facilitator may demo with keys in a private vault).
-- `docker compose up -d` — explain each volume: `agent_workspace` (jail), `skills`, `prompts`, `logs`.
+- Start Docker engine.
+- `docker compose up -d`
 - Verify mounts: shell into container or list paths; confirm `OPENCLAW_WORKSPACE_ROOT` matches `/workspace` in compose.
-- **Checkpoint:** Container healthy; students see mapped directories on host.
+
+how to verify:
+```bash
+docker compose ps
+# see the mapped directories on host
+docker inspect openclaw-workshop-agent --format '{{json .Mounts}}' | jq
+# shell into the container
+docker exec -it openclaw-workshop-agent sh
+# using shell, list all the files
+ls -la /workspace /app/skills /app/prompts /var/log/openclaw /app/openclaw.yaml
+# confirm OPENCLAW_WORKSPACE_ROOT
+docker exec openclaw-workshop-agent printenv OPENCLAW_WORKSPACE_ROOT
+# should print /workspace
+```
 
 ## Minute 45–65 — API / Telegram Connection (20m)
 
@@ -65,9 +79,3 @@ Close with: post-workshop homework — read comments in `skills/` and `prompts/`
 - Collect feedback; point to `README.md` for commands.
 
 ---
-
-## Facilitator notes
-
-- Keep **live coding** to setup + **one** skill run; everything else is explanation and tour.
-- If time slips, shorten Intro by 5m and Industry Tour by 5m — never cut the sandbox + file I/O block.
-- Ensure `.env` is never committed; use `.env.example` only in repo.

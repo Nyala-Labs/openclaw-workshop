@@ -1,3 +1,4 @@
+run Ctrl + Shift + V to render markdown file in ide
 # OpenClaw Workshop — Student Quick Start
 
 A **2-hour** hands-on session for **OpenClaw**, an autonomous AI agent framework. You will set up the Docker-based sandbox and run **one** skill (`local_file_io`) during the workshop. The rest of the repo is **production-shaped** so you can study it afterward.
