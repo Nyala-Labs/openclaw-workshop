@@ -1,15 +1,22 @@
-run Ctrl + Shift + V to render markdown file in ide
-# OpenClaw Workshop — Student Quick Start
+*run Ctrl + Shift + V to render markdown file in ide*
+# OpenClaw Workshop
 
 A **2-hour** hands-on session for **OpenClaw**, an autonomous AI agent framework. You will set up the Docker-based sandbox and run **one** skill (`local_file_io`) during the workshop. The rest of the repo is **production-shaped** so you can study it afterward.
 
 ## Prerequisites
 
 - Docker and Docker Compose v2
-- A text editor
+- Python 3.10+
 - (Optional) Telegram account for bot exercises
 
-## 1. Configure environment
+## Intro
+
+- What OpenClaw is: autonomous agent **runtime** + **skills** (tools) + **prompts** (policy and behavior), not a single monolithic script.
+- Threat model: untrusted input → LLM → **your** skills → **your** data and systems.
+- Learning outcomes: sandbox mental model, one safe skill, where production files live (`skills/`, `prompts/`, `tests/`, `openclaw.yaml`).
+- Icebreaker: one example task students *wish* an agent could do — map it to “skill + approval + audit log.”
+
+## Configure environment
 
 ```bash
 cp .env.example .env
@@ -20,13 +27,21 @@ Edit `.env`:
 | Variable | Purpose |
 |----------|---------|
 | `LLM_API_KEY` | API key for your LLM provider (when you run model-backed flows). |
+| `LLM_BASE_URL` | API default URL path |
+| `LLM_MODEL` | Specific model name used |
 | `TELEGRAM_BOT_TOKEN` | From [@BotFather](https://t.me/BotFather) on Telegram. |
 | `TELEGRAM_CHAT_ID` | Numeric ID of the chat where the bot should listen/respond. |
 | `REQUIRE_EXEC_APPROVAL` | Keep **`true`** unless your facilitator explicitly enables otherwise in a trusted lab. |
 
 Never commit `.env`. It is listed in `.gitignore`.
 
-## 2. Start the stack
+> ## Security warning — `REQUIRE_EXEC_APPROVAL`
+>
+> **Set `REQUIRE_EXEC_APPROVAL=true` in `.env` for this workshop and for any environment where the agent can run code, touch the filesystem, or invoke tools.**  
+> When this flag is enabled, destructive or high-risk actions (execution, broad writes, privilege changes) should not proceed without explicit human approval in the control channel (e.g. Telegram or dashboard).  
+> **Never** disable this in shared, internet-exposed, or untrusted-input scenarios. Treat autonomous agents like privileged automation: default deny, explicit approve.
+
+## Start the stack
 
 From the repository root:
 
@@ -43,7 +58,23 @@ Volumes mapped into the container:
 | `./prompts` | System prompts / directives (read by the agent runtime). |
 | `./logs` | Audit and runtime logs. |
 
-## 3. Telegram bot (optional)
+Verify mounts: shell into container or list paths; confirm `OPENCLAW_WORKSPACE_ROOT` matches `/workspace` in compose.
+
+how to verify:
+```bash
+docker compose ps
+# see the mapped directories on host
+docker inspect openclaw-workshop-agent --format '{{json .Mounts}}' | jq
+# shell into the container
+docker exec -it openclaw-workshop-agent sh
+# using shell, list all the files
+ls -la /workspace /app/skills /app/prompts /var/log/openclaw /app/openclaw.yaml
+# confirm OPENCLAW_WORKSPACE_ROOT
+docker exec openclaw-workshop-agent printenv OPENCLAW_WORKSPACE_ROOT
+# should print /workspace
+```
+
+## Telegram bot (optional)
 
 1. Open Telegram, search for **@BotFather**, send `/newbot` (or use an existing bot). Follow the instructions to create your own bot.
 2. Copy the **HTTP API token** into `TELEGRAM_BOT_TOKEN` in `.env`.
@@ -62,9 +93,9 @@ go to <a href=https://api.telegram.org/botYOUR_BOT_TOKEN/getUpdates></a>
 
 5. Put it in `TELEGRAM_CHAT_ID`.
 
-this telegram bot will connected to openclaw.yaml.
+this telegram bot will connect to openclaw.yaml.
 
-## 4. Where to look next
+## Where to look next
 
 - `curriculum.md` — full 120-minute schedule.
 - `openclaw.yaml` — LLM, Telegram, security env keys, and skill paths.
@@ -72,7 +103,15 @@ this telegram bot will connected to openclaw.yaml.
 - `prompts/core_directive.md` — example **system prompt** (policy separate from code).
 - `tests/test_local_file_io.py` — run `pytest` to verify the skill cannot escape the workspace.
 
-## 5. Run tests (post-workshop)
+## The “Aha!” File I/O Run
+
+- Open `skills/local_file_io.py` — **read** path validation: realpath + commonprefix against workspace root.
+- Run **one** skill invocation: write a small file under `agent_workspace/`, then read it back.
+- Show `logs/` or audit trail if wired — tie to compliance narrative.
+- **Deliberate failure:** attempt path outside workspace (should refuse). Connect to pytest in next section’s preview.
+- **Checkpoint:** Students have created one file inside the jail only.
+
+## Run tests (post-workshop)
 
 ```bash
 python -m venv .venv
