@@ -1,5 +1,6 @@
 # OpenClaw gateway + Python for any workshop skills invoked by the runtime
-FROM node:20-bookworm-slim
+# openclaw@latest requires Node.js v22.12+ (see container logs if gateway restarts)
+FROM node:22-bookworm-slim
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates python3 python3-pip \

@@ -23,7 +23,7 @@ A **2-hour** hands-on session for **OpenClaw**, an autonomous AI agent framework
 | **Docker (recommended for this repo)** | Inside container `openclaw-workshop-agent` | Host **`./agent_workspace`** ↔ container **`/workspace`** | Workshop default; matches `docker-compose.yml` mounts |
 | **Local (no Docker)** | **`openclaw gateway`** on your machine | Often **`~/.openclaw/workspace`** until you change config | Quick dev without containers |
 
-**To use Docker and not the local gateway:** install only the **CLI** on your host (Step 2), configure **`.env`** (Step 3), then run **`docker compose up`** (Step 4) and point the **TUI** at **`ws://127.0.0.1:18789`** (Step 5). **Stop any local gateway first** so nothing else binds port **18789** and the TUI does not stay attached to a process on your laptop.
+**To use Docker and not the local gateway:** install the **CLI** on your host (Step 2), configure **`.env`** (Step 3), **stop any local `openclaw gateway`** so port **18789** is free (Step 4a), then **`docker compose up`** (Step 4b) and run **`openclaw tui`** (Step 5). If a local gateway is still running, the TUI often attaches to it instead of the container.
 
 ---
 
@@ -40,15 +40,17 @@ Use your own fork URL if you did not clone from the org above.
 
 ## Step 2: Install the CLI client
 
-**We are only installing the client interface (TUI and `openclaw` commands), not starting the agent engine.** The gateway runs **inside Docker** after Step 4.
+**We are only installing the client interface (TUI and `openclaw` commands), not the long-lived gateway on your laptop.** For this workshop’s **Docker** path, the **gateway runs in the container** (Step 4). Your host only needs the CLI so you can run **`openclaw tui`** (and optionally **`openclaw gateway health`**) against the gateway on **`localhost:18789`** once the Docker stack is up.
 
-**Official install script (curl):**
+### Install methods
+
+**Official install script (curl)** — often runs an **interactive onboarding** (questions about risks, Quick Start vs full setup, model provider, channels, skills, API keys, hooks, etc.):
 
 ```bash
 curl -fsSL https://openclaw.ai/install.sh | bash
 ```
 
-**Or npm:**
+**Or npm** (usually **no** questionnaire — only puts `openclaw` on your `PATH`):
 
 ```bash
 npm install -g openclaw@latest
@@ -61,6 +63,36 @@ pnpm add -g openclaw@latest
 pnpm approve-builds -g
 ```
 
+### If you go through the wizard (typical with `curl` install)
+
+The prompts change between OpenClaw versions; use this as **intent**, not exact wording:
+
+| Topic | Suggested choice for **gateway in Docker** |
+|-------|---------------------------------------------|
+| **Continue / risks** | Accept so you can finish install. |
+| **Onboarding** | **Quick Start** is fine if offered — you mainly need the CLI. |
+| **Model provider / model** | Match what you will put in **`.env`** (Step 3). Duplicates are OK; the **container** reads **`env_file: .env`** in Compose. |
+| **Channel** (Telegram, WhatsApp, …) | **Skip / disable for now** unless the facilitator requires a channel. The workshop focuses on **TUI + repo workspace**; extra channels can confuse “which gateway is running.” |
+| **Search / web / extra tools** | Skip unless required. |
+| **Skills / dependencies / node manager** | Skip for now, only need the Docker gateway + TUI for this repo. |
+| **API keys in the wizard** | Optional; you can rely on **`.env`** + **`docker compose`** only. Prefer **one source of truth** — **`.env`** for the container — to avoid mismatches. |
+| **Hooks / advanced** | Skip for now. |
+
+**Important:** Some installers register or start a **local gateway** (user service / background `openclaw gateway`). For this repo you want **only the Docker gateway** on port **18789**. After the wizard finishes:
+
+- Run **`openclaw gateway stop`** (or **`openclaw gateway status`**) and stop/disable any **local** gateway service if your OS installed one.
+- If you are unsure, continue to **Step 4a** — you will stop local listeners and free port **18789** before starting Compose.
+
+**If you install via npm/pnpm only** and never ran the script, you may have **no** questionnaire — that is fine. You still need **Step 3** (`.env`) and **Step 4** (Docker).
+
+### Verify the CLI
+
+```bash
+openclaw --version
+```
+
+Do **not** rely on a local gateway until you have intentionally chosen **Appendix B**. For the default path, the next gateway you use should be the one **inside** **`openclaw-workshop-agent`**.
+
 ---
 
 ## Step 3: Configure environment
@@ -69,7 +101,7 @@ pnpm approve-builds -g
 cp .env.example .env
 ```
 
-Edit `.env` and add your **LLM API credentials** (OpenAI, Mistral, or any provider your OpenClaw stack supports). Variables are injected into the container via Compose so the gateway can read them.
+Edit `.env` and add your **LLM API credentials**. Compose injects the file into the container (`env_file`) so the gateway can read them.
 
 | Variable | Purpose |
 |----------|---------|
@@ -78,7 +110,7 @@ Edit `.env` and add your **LLM API credentials** (OpenAI, Mistral, or any provid
 | `LLM_MODEL` | Model id (e.g. `gpt-4o-mini`, `mistral-small-latest`). |
 | `REQUIRE_EXEC_APPROVAL` | Keep **`true`** unless your facilitator explicitly enables otherwise in a trusted lab. |
 
-`openclaw.yaml` in this repo documents how the workshop wires env-backed settings; the gateway also uses **`docker/openclaw.workshop.json`** (baked into the image) for `gateway` bind/port and default agent workspace **`/workspace`**.
+`openclaw.yaml` documents workshop-oriented env wiring; **`docker/openclaw.workshop.json`** sets **`gateway.bind`** to **`lan`**, **`port`** to **18789**, and **`agents.defaults.workspace`** to **`/workspace`**.
 
 Never commit `.env`. It is listed in `.gitignore`.
 
@@ -147,51 +179,52 @@ docker compose logs openclaw-agent --tail 50
 
 ---
 
-## Step 5: Enter the TUI (connect only to the Docker gateway)
+## Step 5: Enter the TUI (Docker gateway)
 
-The **gateway** runs **inside** the `openclaw-workshop-agent` container (`openclaw gateway run` with **`--bind lan`** and **`docker/openclaw.workshop.json`** so the default workspace is **`/workspace`**). Your **host** only runs the **TUI client** from Step 2 — **no local `openclaw gateway`** should be running (Step 4a).
+The **gateway** runs **inside** the `openclaw-workshop-agent` container (`openclaw gateway run` with **`--bind lan`** so the published port **18789** works). Your **host** only runs the **TUI** from Step 2 — **no local `openclaw gateway`** (Step 4a).
 
 1. **Docker is up** — `docker compose ps` shows `openclaw-workshop-agent` running; **`docker compose logs openclaw-agent --tail 30`** shows the gateway started, not crashed.
-2. **Port** — published as **`127.0.0.1:18789`** on the host (maps to the gateway in the container).
 
-3. **Verify the remote gateway before the TUI**
+2. **Optional — check the gateway**
 
    ```bash
    openclaw gateway health --url ws://127.0.0.1:18789
    ```
 
-   If this fails, fix the container first (`docker compose logs -f openclaw-agent`), not your `~/.openclaw` profile.
+   If this fails, inspect **`docker compose logs -f openclaw-agent`** and confirm Step 4a (nothing else on **18789**).
 
-4. **Open the TUI on the host** (talks to **Docker**, not a second gateway on your laptop):
+3. **Start the TUI** (normal invocation; it should discover **`localhost:18789`**):
 
    ```bash
    openclaw tui
    ```
 
-   Prefer forcing the gateway URL if your CLI supports it (names vary by version), e.g. **`--url ws://127.0.0.1:18789`** — see **`openclaw tui --help`**.
+   If your CLI defaults to a different gateway, use **`openclaw tui --help`** and point at **`ws://127.0.0.1:18789`** if needed.
 
-5. **Confirm you are on the workshop workspace** — when connected to the container, file tools should use **`/workspace`** inside the box, which is **`./agent_workspace`** on your machine. If the status line still shows **`~/.openclaw/workspace`**, the TUI is almost certainly still using a **local** gateway: return to Step 4a, stop the local process, restart Compose, and try again.
+4. **Confirm the workshop workspace** — when using the **Docker** gateway, the agent workspace is **`/workspace`** in the container (**`./agent_workspace`** on the host). If the UI still shows **`~/.openclaw/workspace`**, you are likely still hitting a **local** gateway — repeat **Step 4a**, then **`docker compose restart`** and open the TUI again.
 
 **Troubleshooting**
 
-- **Port in use:** Another process grabbed **18789** — stop local OpenClaw (Step 4a) or change the host port in **`docker-compose.yml`** (e.g. `"18790:18789"`) and point the TUI at **`ws://127.0.0.1:18790`**.
-- **`openclaw: not found` in `docker exec`** — rebuild the image: **`docker compose build --no-cache`**.
-- **TUI offline** — **`docker compose logs -f openclaw-agent`** and confirm **`curl -sS -o /dev/null -w "%{http_code}\n" http://127.0.0.1:18789/`** returns some HTTP status (not connection refused).
+- **Port in use:** Stop local OpenClaw (Step 4a) or remap the host port in **`docker-compose.yml`** (e.g. `"18790:18789"`) and pass **`--url ws://127.0.0.1:18790`** if your CLI requires it.
+- **`openclaw: not found` in `docker exec`** — rebuild: **`docker compose build --no-cache`**.
+- **No assistant reply** — try **`/deliver on`** in the TUI (see **`openclaw tui --help`** for **`--deliver`**).
 
 ---
 
-## Step 6: The “Aha!” File I/O run
+## Step 6: File I/O run
 
 1. **Skim** `skills/local_file_io.py` — path checks keep reads/writes under the workspace root.
-2. In the **TUI** (after Step 5), **paste or type this prompt** so the agent uses file I/O in the workspace:
+2. In the **TUI** (after Step 5), check **`/status`** if something looks off. **“Gateway not connected”** usually means a **local** gateway is still running or port **18789** is wrong — go back to **Step 4a** and Step 5.
+3. If the model does not reply, turn on delivery: **`/deliver on`** once, or **`openclaw tui --deliver`** if your CLI supports it.
+4. **Paste or type this prompt** so the agent uses file I/O in the workspace:
 
    **Prompt to type in the TUI:**
 
    > Please write a short poem about automation and save it to a file called `poem.txt` in your workspace.
 
-3. Confirm **`./agent_workspace/poem.txt`** exists on the host (same as `/workspace/poem.txt` in the container). Read it back or open it in your editor.
-4. **Optional stretch:** ask the agent to attempt a path outside the workspace — the skill should refuse.
-5. **Checkpoint:** one file created **inside** the jail only.
+5. Confirm **`./agent_workspace/poem.txt`** exists on the host (same as `/workspace/poem.txt` in the container). Read it back or open it in your editor.
+6. **Optional stretch:** ask the agent to attempt a path outside the workspace — the skill should refuse.
+7. **Checkpoint:** one file created **inside** the jail only.
 
 ---
 
@@ -200,7 +233,7 @@ The **gateway** runs **inside** the `openclaw-workshop-agent` container (`opencl
 | File | Purpose |
 |------|---------|
 | `Dockerfile` | Installs `openclaw`, copies gateway config, runs `openclaw gateway run`. |
-| `docker/openclaw.workshop.json` | Minimal gateway (`port` **18789**, `bind` **lan**) and agent workspace **`/workspace`**. |
+| `docker/openclaw.workshop.json` | Gateway **`port` / `bind`**, default agent workspace **`/workspace`**. |
 | `docker-compose.yml` | Builds the image, env file, volumes, port **18789**. |
 | `openclaw.yaml` | Workshop reference for LLM env keys, security, skill paths. |
 | `skills/local_file_io.py` | Sandboxed read/write skill. |
@@ -211,7 +244,7 @@ The **gateway** runs **inside** the `openclaw-workshop-agent` container (`opencl
 
 ## Appendix A: Optional — interactive install wizard
 
-If you used `curl … install.sh` and OpenClaw walked you through questions, you can use **Quick Start**, pick your **model provider** and **model**, skip **search** and extra **API key** prompts if you already set keys in `.env` (Step 3). This is **not** required for the numbered steps if you already have the CLI and `.env` configured.
+See **Step 2** for the full wizard guidance (Quick Start, channels, API keys, and stopping an accidental **local** gateway). **npm/pnpm** installs often skip the questionnaire entirely.
 
 ---
 
