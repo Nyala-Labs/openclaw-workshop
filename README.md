@@ -16,6 +16,67 @@ A **2-hour** hands-on session for **OpenClaw**, an autonomous AI agent framework
 - Learning outcomes: sandbox mental model, one safe skill, where production files live (`skills/`, `prompts/`, `tests/`, `openclaw.yaml`).
 - Icebreaker: one example task students *wish* an agent could do — map it to “skill + approval + audit log.”
 
+## Install the OpenClaw package
+### use the official installation script, via curl
+```bash
+curl -fsSL https://openclaw.ai/install.sh | bash
+```
+
+### use npm
+```bash
+npm install -g openclaw@latest
+```
+
+### use pnpm
+```bash
+pnpm add -g openclaw@latest
+pnpm approve-builds -g
+```
+
+## Then answer the questions
+### Question 1: Understand the risks
+Continue? Choose yes
+
+### Question 2: Onboarding mode
+Choose Quick Start
+
+### Question 3: Model provider
+Your own preference
+
+### Question 4: Specific model
+Your own preference
+
+### Question 5: Choose a channel
+telegram is default, simplest way
+but skip this for now
+
+### Question 6: Search provider
+skip for now
+
+### Question 7: Configure skills
+click yes
+
+### Question 8: install missing skill dependencies
+choose clawhub
+
+### Question 9: preferred node manager for skills
+choose npm
+
+### Questions 10 - 13
+API keys, skip for now
+
+### Question 14 - Hooks
+skip for now
+
+## Start gateway service
+how to hatch bot? choose in tui (terminal user interface)
+
+verify installation, ask are you online
+
+## how to start convo
+always use `openclaw tui` to go back to tui
+if gateway not running, need to `openclaw gateway start` first
+
 ## Configure environment
 
 ```bash
