@@ -1,5 +1,6 @@
 # OpenClaw baseline configuration — LLM API, skills, logging (optional channels per facilitator).
 # Paths below are container paths (see docker-compose.yml volume mounts).
+# The live gateway in Docker uses JSON at docker/openclaw.workshop.json (copied to /app/.openclaw/openclaw.json in the image).
 
 version: "1"
 

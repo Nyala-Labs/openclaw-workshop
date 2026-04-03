@@ -1,8 +1,12 @@
-# OpenClaw workshop stack: agent runs inside the container; host paths are mounted read/write
-# only where needed. Execution jail is ./agent_workspace — skills must enforce the same boundary.
+# OpenClaw workshop stack: gateway runs ONLY in this container (see Dockerfile CMD).
+# Stop any local `openclaw gateway` on the host before `up`, or port 18789 will conflict.
+# Host TUI connects to localhost:18789 → container gateway; execution jail is ./agent_workspace.
 services:
   openclaw-agent:
-    image: python:3.12-slim-bookworm
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: openclaw-workshop-agent:local
     container_name: openclaw-workshop-agent
     working_dir: /app
     env_file:
@@ -27,8 +31,7 @@ services:
       - ./logs:/var/log/openclaw:rw
       # Optional: mount repo root for workshop exercises
       - ./openclaw.yaml:/app/openclaw.yaml:ro
-    # Workshop default: keep container up; replace with your real agent entrypoint
-    command: ["sleep", "infinity"]
+    # Gateway starts via Dockerfile CMD (`openclaw gateway run …`)
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
