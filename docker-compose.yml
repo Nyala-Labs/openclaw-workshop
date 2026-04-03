@@ -13,6 +13,9 @@ services:
       OPENCLAW_SKILLS_DIR: /app/skills
       OPENCLAW_PROMPTS_DIR: /app/prompts
       OPENCLAW_LOGS_DIR: /var/log/openclaw
+    ports:
+      # OpenClaw gateway — host CLI / `openclaw tui` connects here when the gateway runs in this service
+      - "18789:18789"
     volumes:
       # Execution sandbox — agent file I/O is restricted here by skills + policy
       - ./agent_workspace:/workspace:rw

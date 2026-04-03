@@ -1,4 +1,4 @@
-# OpenClaw baseline configuration — bridges LLM API, Telegram, and registered skills.
+# OpenClaw baseline configuration — LLM API, skills, logging (optional channels per facilitator).
 # Paths below are container paths (see docker-compose.yml volume mounts).
 
 version: "1"
@@ -13,12 +13,6 @@ llm:
   api_key_env: LLM_API_KEY
   base_url: "${LLM_BASE_URL:-}"
   model: "${LLM_MODEL:-gpt-4o-mini}"
-
-telegram:
-  enabled: true
-  bot_token_env: TELEGRAM_BOT_TOKEN
-  # Single chat for workshop simplicity; production uses allowlists / RBAC
-  default_chat_id_env: TELEGRAM_CHAT_ID
 
 security:
   require_exec_approval_env: REQUIRE_EXEC_APPROVAL
