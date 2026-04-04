@@ -94,7 +94,7 @@ Do **not** rely on a local gateway until you have intentionally chosen **Appendi
 cp .env.example .env
 ```
 
-Edit `.env` and add your **LLM API credentials**. Compose injects the file into the container (`env_file`) so the gateway can read them.
+First edit `.env`. Compose injects the file into the container (`env_file`) so the gateway can read them.
 
 | Variable | Purpose |
 |----------|---------|
@@ -102,6 +102,7 @@ Edit `.env` and add your **LLM API credentials**. Compose injects the file into 
 | `LLM_BASE_URL` | Provider base URL (e.g. Mistral: `https://api.mistral.ai/v1`). |
 | `LLM_MODEL` | Model id (e.g. `gpt-4o-mini`, `mistral-small-latest`). |
 | `REQUIRE_EXEC_APPROVAL` | Keep **`true`** unless your facilitator explicitly enables otherwise in a trusted lab. |
+| `OPENCLAW_GATEWAY_TOKEN` | Secret for connecting to OpenClaw gateway at agent's websocket. |
 
 `openclaw.yaml` documents workshop-oriented env wiring; **`docker/openclaw.workshop.json`** sets **`gateway.bind`** to **`lan`**, **`port`** to **18789**, and **`agents.defaults.workspace`** to **`/workspace`**.
 
@@ -109,6 +110,37 @@ Never commit `.env`. It is listed in `.gitignore`.
 
 > **Security — `REQUIRE_EXEC_APPROVAL`**  
 > Set `REQUIRE_EXEC_APPROVAL=true` in workshops and anywhere the agent can run code, touch the filesystem, or invoke tools. When enabled, high-risk actions should not proceed without explicit human approval in the control channel (e.g. TUI, dashboard). **Never** disable this in shared, internet-exposed, or untrusted-input scenarios.
+
+Next check `~/.openclaw/openclaw.json`. In the gateway field, need to config as follows:
+```json
+"gateway": {
+    "auth": {
+      "mode": "token",
+      "token": "insert your own token"
+    },
+    "mode": "remote",
+    "remote": {
+        "url": "ws://127.0.0.1:18789",
+        "token": "same value as auth token"
+    }
+  },
+```
+
+Then check `./docker-compose.yml`. must have:
+```yaml
+environment:
+   OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+
+command: openclaw gateway
+
+volumes:
+   # For permanent device config
+   - ./.openclaw_container:/root/.openclaw:rw
+   # Overwrite the Dockerfile config with actual OpenClaw config file
+   - ./.openclaw_container:/app/.openclaw:ro
+   # Specifically map your YAML file into the .openclaw folder
+      - ./openclaw.yaml:/app/.openclaw/openclaw.yaml:ro
+```
 
 ---
 
@@ -145,6 +177,8 @@ From the repo root (use **`--build`** the first time, or after changing `Dockerf
 docker compose up -d --build
 ```
 
+Once the container is up, the OpenClaw gateway is open inside; no need to open it again in host terminal. Just use TUI client in host terminal.
+
 **What gets mounted** (host → container):
 
 | Host path | Role |
@@ -171,6 +205,21 @@ docker compose logs openclaw-agent --tail 50
 ```
 
 You should see a line like **`listening on ws://0.0.0.0:18789`**. If the container **restarts in a loop** (`docker compose ps` shows **Restarting**), read the logs: the **`openclaw`** CLI may require a **newer Node.js** than the image provides — the **`Dockerfile`** uses **`node:22-bookworm-slim`** for that reason. Rebuild with **`docker compose pull`** / **`docker compose build --no-cache`** after pulling the repo.
+
+**Pair device for the first time** - mutual authentication, when creating container for the very first time, need to approve connection from device to gateway:
+```bash
+# Enter the container
+docker exec -it openclaw-workshop-agent bash
+
+# Find the Request ID (it should be there now that the TUI tried to connect)
+openclaw devices list
+
+# Approve it
+openclaw devices approve <YOUR_ID_HERE>
+
+# Exit the container
+exit
+```
 
 ---
 

@@ -1,5 +1,6 @@
 # OpenClaw gateway + Python for any workshop skills invoked by the runtime
 # openclaw@latest requires Node.js v22.12+ (see container logs if gateway restarts)
+# Gateway starts via Dockerfile CMD (`openclaw gateway run …`)
 FROM node:22-bookworm-slim
 
 RUN apt-get update \
@@ -12,7 +13,6 @@ ENV HOME=/app
 WORKDIR /app
 
 RUN mkdir -p /app/.openclaw
-COPY docker/openclaw.workshop.json /app/.openclaw/openclaw.json
 
 # Foreground gateway; --bind lan listens beyond loopback so published ports work from the host.
 # --allow-unconfigured avoids hard-failing when local dev config is minimal (see OpenClaw docs).

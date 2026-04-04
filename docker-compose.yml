@@ -34,7 +34,12 @@ services:
       - ./logs:/var/log/openclaw:rw
       # Optional: mount repo root for workshop exercises
       - ./openclaw.yaml:/app/openclaw.yaml:ro
-    # Gateway starts via Dockerfile CMD (`openclaw gateway run …`)
+      # Take config from inside container, save in this folder on host, important for permanent device pairing
+      # Also overwrite the Dockerfile config with actual OpenClaw config file
+      - ./.openclaw_container:/app/.openclaw:rw
+      # Specifically map your YAML file into the .openclaw folder
+      - ./openclaw.yaml:/app/.openclaw/openclaw.yaml:ro
+      
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
