@@ -9,6 +9,10 @@
 !.openclaw_container/openclaw.json.example
 !.openclaw_container/openclaw.yaml
 
+docker/
+
+.dockerignore
+
 # Python
 __pycache__/
 *.py[cod]

@@ -14,7 +14,6 @@ A **2-hour** hands-on session for **OpenClaw**, an autonomous AI agent framework
 - **What OpenClaw is:** autonomous **runtime** + **skills** (tools) + **prompts** (policy and behavior), not a single monolithic script.
 - **Threat model:** untrusted input → LLM → **your** skills → **your** data and systems.
 - **Learning outcomes:** sandbox mental model, one safe skill, where production files live (`skills/`, `prompts/`, `tests/`, `openclaw.yaml`).
-- **Icebreaker:** one example task students *wish* an agent could do — map it to “skill + approval + audit log.”
 
 ### Choose where the gateway runs
 
@@ -138,7 +137,7 @@ environment:
 
 volumes:
    # Overwrite the Dockerfile config with actual OpenClaw config file
-   - ./.openclaw_container:/app/.openclaw:ro
+   - ./.openclaw_container:/app/.openclaw:rw
 ```
 
 ---
@@ -230,7 +229,7 @@ Your **host** only runs the **TUI**.
 1. **Optional — check the gateway**
 
    ```bash
-   openclaw gateway health --url ws://127.0.0.1:18789
+   openclaw gateway health --url ws://127.0.0.1:18789tyo 
    ```
 
    If this fails, inspect **`docker compose logs -f openclaw-agent`** and confirm Step 4a (nothing else on **18789**).

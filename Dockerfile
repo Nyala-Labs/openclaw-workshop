@@ -20,6 +20,7 @@ discord-api-types @discordjs/voice
 ENV HOME=/app
 WORKDIR /app
 
+# overwritten with .openclaw_container mapping, but can keep for non-compose runs
 RUN mkdir -p /app/.openclaw
 
 # Foreground gateway; --bind lan listens beyond loopback so published ports work from the host.
