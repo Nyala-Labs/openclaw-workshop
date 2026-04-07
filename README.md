@@ -101,12 +101,17 @@ First edit `.env`. Compose injects the file into the container (`env_file`) so t
 | `LLM_API_KEY` | API key from your provider. |
 | `LLM_BASE_URL` | Provider base URL (e.g. Mistral: `https://api.mistral.ai/v1`). |
 | `LLM_MODEL` | Model id (e.g. `gpt-4o-mini`, `mistral-small-latest`). |
-| `REQUIRE_EXEC_APPROVAL` | Keep **`true`** unless your facilitator explicitly enables otherwise in a trusted lab. |
-| `OPENCLAW_GATEWAY_TOKEN` | Secret for connecting to OpenClaw gateway at agent's websocket. |
+| `REQUIRE_EXEC_APPROVAL` | Keep **`true`**. |
+| `OPENCLAW_GATEWAY_TOKEN` | Secret for connecting to OpenClaw gateway inside Docker. |
 
-`openclaw.yaml` documents workshop-oriented env wiring; **`docker/openclaw.workshop.json`** sets **`gateway.bind`** to **`lan`**, **`port`** to **18789**, and **`agents.defaults.workspace`** to **`/workspace`**.
+For the token, you set it yourself. Can also randomly generate it using:
+```bash
+openssl rand -hex 32
+```
 
 Never commit `.env`. It is listed in `.gitignore`.
+
+In the `.openclaw_container` folder, copy the `openclaw.json.example` file, put your token in.
 
 > **Security — `REQUIRE_EXEC_APPROVAL`**  
 > Set `REQUIRE_EXEC_APPROVAL=true` in workshops and anywhere the agent can run code, touch the filesystem, or invoke tools. When enabled, high-risk actions should not proceed without explicit human approval in the control channel (e.g. TUI, dashboard). **Never** disable this in shared, internet-exposed, or untrusted-input scenarios.
@@ -131,15 +136,9 @@ Then check `./docker-compose.yml`. must have:
 environment:
    OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
 
-command: openclaw gateway
-
 volumes:
-   # For permanent device config
-   - ./.openclaw_container:/root/.openclaw:rw
    # Overwrite the Dockerfile config with actual OpenClaw config file
    - ./.openclaw_container:/app/.openclaw:ro
-   # Specifically map your YAML file into the .openclaw folder
-      - ./openclaw.yaml:/app/.openclaw/openclaw.yaml:ro
 ```
 
 ---
@@ -187,13 +186,14 @@ Once the container is up, the OpenClaw gateway is open inside; no need to open i
 | `./skills` | Skill code (Python modules). |
 | `./prompts` | System prompts / directives. |
 | `./logs` | Audit and runtime logs. |
+| `./.openclaw_container` | The folder to contain the OpenClaw config file `openclaw.yaml` that will be passed into Docker. |
 
 **Verify the container is up and mounts exist:**
 
 ```bash
 docker compose ps
 docker inspect openclaw-workshop-agent --format '{{json .Mounts}}' | jq
-docker exec openclaw-workshop-agent sh -c 'ls -la /workspace /app/skills /app/prompts /var/log/openclaw /app/openclaw.yaml'
+docker exec openclaw-workshop-agent sh -c 'ls -la /workspace /app/skills /app/prompts /var/log/openclaw /app/.openclaw'
 docker exec openclaw-workshop-agent printenv OPENCLAW_WORKSPACE_ROOT
 # Expect: /workspace
 ```
@@ -201,7 +201,7 @@ docker exec openclaw-workshop-agent printenv OPENCLAW_WORKSPACE_ROOT
 **Confirm the gateway is listening** (logs should show the gateway starting, not exiting):
 
 ```bash
-docker compose logs openclaw-agent --tail 50
+docker compose logs openclaw-agent --tail 30
 ```
 
 You should see a line like **`listening on ws://0.0.0.0:18789`**. If the container **restarts in a loop** (`docker compose ps` shows **Restarting**), read the logs: the **`openclaw`** CLI may require a **newer Node.js** than the image provides — the **`Dockerfile`** uses **`node:22-bookworm-slim`** for that reason. Rebuild with **`docker compose pull`** / **`docker compose build --no-cache`** after pulling the repo.
@@ -241,26 +241,21 @@ Your **host** only runs the **TUI**.
    openclaw tui
    ```
 
-   If your CLI defaults to a different gateway, use **`openclaw tui --help`** and point at **`ws://127.0.0.1:18789`** if needed.
-
 3. **Confirm the workshop workspace** — when using the **Docker** gateway, the agent workspace is **`/workspace`** in the container (**`./agent_workspace`** on the host). If the UI still shows **`~/.openclaw/workspace`**, you are likely still hitting a **local** gateway — repeat **Step 4a**, then **`docker compose restart`** and open the TUI again.
 
 ---
 
 ## Step 6: File I/O run
 
-1. **Skim** `skills/local_file_io.py` — path checks keep reads/writes under the workspace root.
-2. In the **TUI** (after Step 5), check **`/status`** if something looks off. **“Gateway not connected”** usually means a **local** gateway is still running or port **18789** is wrong — go back to **Step 4a** and Step 5.
-3. If the model does not reply, turn on delivery: **`/deliver on`** once, or **`openclaw tui --deliver`** if your CLI supports it.
-4. **Paste or type this prompt** so the agent uses file I/O in the workspace:
+1. **Paste or type this prompt** so the agent uses file I/O in the workspace:
 
    **Prompt to type in the TUI:**
 
    > Please write a short poem about automation and save it to a file called `poem.txt` in your workspace.
 
-5. Confirm **`./agent_workspace/poem.txt`** exists on the host (same as `/workspace/poem.txt` in the container). Read it back or open it in your editor.
-6. **Optional stretch:** ask the agent to attempt a path outside the workspace — the skill should refuse.
-7. **Checkpoint:** one file created **inside** the jail only.
+2. Confirm **`./agent_workspace/poem.txt`** exists on the host (same as `/workspace/poem.txt` in the container). Read it back or open it in your editor.
+3. **Optional stretch:** ask the agent to attempt a path outside the workspace — the skill should refuse.
+4. **Checkpoint:** one file created **inside** the jail only.
 
 ---
 
@@ -269,9 +264,8 @@ Your **host** only runs the **TUI**.
 | File | Purpose |
 |------|---------|
 | `Dockerfile` | Installs `openclaw` on **Node 22** (required by current `openclaw` CLI), copies gateway config, runs `openclaw gateway run`. |
-| `docker/openclaw.workshop.json` | Gateway **`port` / `bind`**, default agent workspace **`/workspace`**. |
-| `docker-compose.yml` | Builds the image, env file, volumes, port **18789**. |
-| `openclaw.yaml` | Workshop reference for LLM env keys, security, skill paths. |
+| `docker-compose.yml` | Builds the image, env file, volumes, port **18789**. Gateway **`port` / `bind`**, default agent workspace **`/workspace`**. |
+| `openclaw.yaml` | OpenClaw reference for LLM env keys, security, skill paths. |
 | `skills/local_file_io.py` | Sandboxed read/write skill. |
 | `prompts/core_directive.md` | Example system prompt (policy separate from code). |
 | `tests/test_local_file_io.py` | Unit tests for the sandbox boundary. |

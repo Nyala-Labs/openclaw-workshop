@@ -1,4 +1,4 @@
-# OpenClaw baseline configuration — LLM API, skills, logging (optional channels per facilitator).
+# OpenClaw baseline configuration — LLM API, skills, logging, channels
 # Paths below are container paths (see docker-compose.yml volume mounts).
 # The live gateway in Docker uses JSON at docker/openclaw.workshop.json (copied to /app/.openclaw/openclaw.json in the image).
 
@@ -8,6 +8,7 @@ agent:
   name: workshop-agent
   # Loaded by the runtime; keep prompts out of Python strings when possible
   system_prompt_file: /app/prompts/core_directive.md
+  workspace: /workspace
 
 llm:
   provider: "${LLM_PROVIDER:-openai_compatible}"

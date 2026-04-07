@@ -7,6 +7,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: openclaw-workshop-agent:local
+    user: "1000:1000"
     container_name: openclaw-workshop-agent
     working_dir: /app
     env_file:
@@ -21,8 +22,6 @@ services:
     ports:
       # OpenClaw gateway — host CLI / `openclaw tui` connects here when the gateway runs in this service
       - "18789:18789"
-    # let docker handle keeping the service alive, instead of the linux service manager, systemd
-    command: openclaw gateway
     volumes:
       # Execution sandbox — agent file I/O is restricted here by skills + policy
       - ./agent_workspace:/workspace:rw
@@ -32,13 +31,9 @@ services:
       - ./prompts:/app/prompts:ro
       # Audit trail (host-backed)
       - ./logs:/var/log/openclaw:rw
-      # Optional: mount repo root for workshop exercises
-      - ./openclaw.yaml:/app/openclaw.yaml:ro
       # Take config from inside container, save in this folder on host, important for permanent device pairing
       # Also overwrite the Dockerfile config with actual OpenClaw config file
       - ./.openclaw_container:/app/.openclaw:rw
-      # Specifically map your YAML file into the .openclaw folder
-      - ./openclaw.yaml:/app/.openclaw/openclaw.yaml:ro
       
     restart: unless-stopped
     security_opt:

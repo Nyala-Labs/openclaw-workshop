@@ -2,6 +2,12 @@
 .env
 .env.local
 .env.*.local
+.openclaw_container/openclaw.json
+
+# .openclaw_container folder auto-created files when running docker
+.openclaw_container/*
+!.openclaw_container/openclaw.json.example
+!.openclaw_container/openclaw.yaml
 
 # Python
 __pycache__/

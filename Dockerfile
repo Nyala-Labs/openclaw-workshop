@@ -4,10 +4,18 @@
 FROM node:22-bookworm-slim
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates python3 python3-pip \
+  && apt-get install -y --no-install-recommends ca-certificates git python3 python3-pip \
   && rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g openclaw@latest
+RUN npm install -g openclaw@latest \
+@buape/carbon \
+@larksuiteoapi/node-sdk \
+@slack/web-api @slack/bolt @slack/logger \
+@grammyjs/runner @grammyjs/transformer-throttler \
+@whiskeysockets/baileys \
+@slack/web-api @slack/bolt \
+discord-api-types @discordjs/voice
+
 
 ENV HOME=/app
 WORKDIR /app
@@ -15,5 +23,4 @@ WORKDIR /app
 RUN mkdir -p /app/.openclaw
 
 # Foreground gateway; --bind lan listens beyond loopback so published ports work from the host.
-# --allow-unconfigured avoids hard-failing when local dev config is minimal (see OpenClaw docs).
-CMD ["openclaw", "gateway", "run", "--port", "18789", "--bind", "lan", "--allow-unconfigured"]
+CMD ["openclaw", "gateway", "run", "--port", "18789", "--bind", "lan"]
